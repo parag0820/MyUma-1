@@ -9,8 +9,7 @@ const PaymentSuccess = () => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    // 1. Update Redux State and LocalStorage locally
-    // Since the Webhook already updated the DB, we just sync the UI
+   
     dispatch(setPaymentSuccess());
 
     toast.success("Payment successful! Your account is now active.");

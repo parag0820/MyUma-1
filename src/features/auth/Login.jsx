@@ -1,553 +1,17 @@
-// // import React, { useState, useEffect } from "react";
-// // import { useDispatch, useSelector } from "react-redux";
-// // import { loginUser, registerUser, verifyOtp, logout } from "./authSlice";
-// // import { toast } from "react-toastify";
-// // import { useNavigate } from "react-router-dom";
-// // import {
-// //   forgotPasswordAPI,
-// //   resetPasswordAPI,
-// //   verifyOtpAPI,
-// //   getImgURL, // Imported your image helper
-// // } from "../../services/authService";
-
-// // const Login = () => {
-// //   const navigate = useNavigate();
-// //   const dispatch = useDispatch();
-// //   const { otpEmail, isLoading } = useSelector((state) => state.auth);
-
-// //   // --- Session Management (24 Hours) ---
-// //   const SESSION_DURATION = 24 * 60 * 60 * 1000;
-// //   const startSession = () => {
-// //     const expiryTime = Date.now() + SESSION_DURATION;
-// //     localStorage.setItem("sessionExpiry", expiryTime.toString());
-// //   };
-
-// //   useEffect(() => {
-// //     const expiry = localStorage.getItem("sessionExpiry");
-// //     if (expiry && Date.now() > parseInt(expiry)) {
-// //       dispatch(logout());
-// //       toast.warn("Session expired. Please login again.");
-// //     }
-// //   }, [dispatch]);
-
-// //   // --- UI States ---
-// //   const [isLoginTab, setIsLoginTab] = useState(true);
-// //   const [showOtp, setShowOtp] = useState(false);
-// //   const [otp, setOtp] = useState("");
-// //   const [mode, setMode] = useState("auth");
-// //   const [showResetModal, setShowResetModal] = useState(false);
-// //   const [resetEmail, setResetEmail] = useState("");
-// //   const [imagePreview, setImagePreview] = useState(null);
-
-// //   const [loginData, setLoginData] = useState({ email: "", password: "" });
-
-// //   const [registerData, setRegisterData] = useState({
-// //     fullName: "",
-// //     email: "",
-// //     password: "",
-// //     address: "",
-// //     country: "",
-// //     city: "",
-// //     contactNo: "",
-// //     role: "user",
-// //     status: "deactive", // Defaulted to deactive
-// //     profileImage: null,
-// //   });
-
-// //   const [changePasswordData, setChangePasswordData] = useState({
-// //     password: "",
-// //     confirmPassword: "",
-// //   });
-
-// //   // Handle Image Selection
-// //   const handleImageChange = (e) => {
-// //     const file = e.target.files[0];
-// //     if (file) {
-// //       setRegisterData({ ...registerData, profileImage: file });
-// //       setImagePreview(URL.createObjectURL(file)); // Create local preview
-// //     }
-// //   };
-
-// //   const handleLogin = async (e) => {
-// //     e.preventDefault();
-// //     const res = await dispatch(loginUser(loginData));
-// //     if (res.meta.requestStatus === "fulfilled") {
-// //       startSession();
-// //       toast.success("Login Successful");
-// //       navigate("/");
-// //     } else {
-// //       toast.error(res.payload || "Login Failed");
-// //     }
-// //   };
-
-// //   const handleRegister = async (e) => {
-// //     e.preventDefault();
-// //     const formData = new FormData();
-// //     formData.append("fullName", registerData.fullName);
-// //     formData.append("email", registerData.email);
-// //     formData.append("password", registerData.password);
-// //     formData.append("address", registerData.address);
-// //     formData.append("country", registerData.country);
-// //     formData.append("city", registerData.city);
-// //     formData.append("contactNo", registerData.contactNo);
-// //     formData.append("role", registerData.role);
-// //     formData.append("status", registerData.status);
-// //     if (registerData.profileImage) {
-// //       formData.append("profileImage", registerData.profileImage);
-// //     }
-
-// //     const res = await dispatch(registerUser(formData));
-// //     if (res.meta.requestStatus === "fulfilled") {
-// //       toast.success("OTP sent to your email");
-// //       setShowOtp(true);
-// //       setMode("auth");
-// //     } else {
-// //       toast.error(res.payload || "Signup Failed");
-// //     }
-// //   };
-
-// //   // Login.js mein handleVerifyOtp function:
-// //   const handleVerifyOtp = async (e) => {
-// //     e.preventDefault();
-// //     const emailToVerify = mode === "forgot" ? resetEmail : otpEmail;
-
-// //     if (mode === "forgot") {
-// //       // ... forgot logic
-// //     } else {
-// //       const res = await dispatch(verifyOtp({ email: emailToVerify, otp }));
-
-// //       if (res.meta.requestStatus === "fulfilled") {
-// //         startSession();
-// //         toast.success("Registration Successful!");
-
-// //         // Navigate to pricing - data ab localStorage mein aa chuka hai
-// //         navigate("/pricing");
-// //       } else {
-// //         toast.error(res.payload || "Invalid OTP");
-// //       }
-// //     }
-// //   };
-
-// //   const handleForgotPassword = async (e) => {
-// //     e.preventDefault();
-// //     try {
-// //       await forgotPasswordAPI({ email: resetEmail });
-// //       setMode("forgot");
-// //       setShowOtp(true);
-// //       toast.info("Reset OTP sent to " + resetEmail);
-// //     } catch (err) {
-// //       toast.error("User not found");
-// //     }
-// //   };
-
-// //   const handleResetPassword = async (e) => {
-// //     e.preventDefault();
-// //     if (changePasswordData.password !== changePasswordData.confirmPassword) {
-// //       return toast.error("Passwords do not match");
-// //     }
-// //     try {
-// //       const res = await resetPasswordAPI({
-// //         email: resetEmail,
-// //         newPassword: changePasswordData.password,
-// //         confirmPassword: changePasswordData.confirmPassword,
-// //       });
-// //       if (res?.message === "Password reset successful") {
-// //         toast.success("Password reset successfully");
-// //         setShowResetModal(false);
-// //         setIsLoginTab(true);
-// //       }
-// //     } catch (err) {
-// //       toast.error("Reset Failed");
-// //     }
-// //   };
-
-// //   return (
-// //     <div className="bg-light min-vh-100 d-flex align-items-center py-5">
-// //       <div className="container">
-// //         <div className="row justify-content-center">
-// //           <div className="col-md-8 col-lg-6">
-// //             <div
-// //               className="card border-0 shadow-lg p-4"
-// //               style={{ borderRadius: "16px" }}>
-// //               <h2
-// //                 className="fw-bold text-center mb-4"
-// //                 style={{ color: "#001f3f" }}>
-// //                 MyUma
-// //               </h2>
-
-// //               {showOtp ? (
-// //                 <form onSubmit={handleVerifyOtp}>
-// //                   <p className="text-center text-muted mb-4">
-// //                     Enter verification code
-// //                   </p>
-// //                   <input
-// //                     type="text"
-// //                     className="form-control form-control-lg mb-3 text-center"
-// //                     placeholder="Enter OTP"
-// //                     value={otp}
-// //                     onChange={(e) => setOtp(e.target.value)}
-// //                     required
-// //                   />
-// //                   <button
-// //                     className="btn btn-lg w-100 text-white"
-// //                     style={{ backgroundColor: "#001f3f" }}
-// //                     disabled={isLoading}>
-// //                     {isLoading ? "Verifying..." : "Verify Account"}
-// //                   </button>
-// //                 </form>
-// //               ) : (
-// //                 <>
-// //                   <div className="p-1 mb-4 d-flex bg-light rounded-3 border">
-// //                     <button
-// //                       className={`btn w-50 py-2 border-0 ${isLoginTab ? "bg-white shadow-sm fw-bold" : "text-muted"}`}
-// //                       onClick={() => setIsLoginTab(true)}>
-// //                       Login
-// //                     </button>
-// //                     <button
-// //                       className={`btn w-50 py-2 border-0 ${!isLoginTab ? "bg-white shadow-sm fw-bold" : "text-muted"}`}
-// //                       onClick={() => setIsLoginTab(false)}>
-// //                       Register
-// //                     </button>
-// //                   </div>
-
-// //                   {isLoginTab ? (
-// //                     <form onSubmit={handleLogin}>
-// //                       <div className="mb-3">
-// //                         <label className="small fw-bold text-muted mb-1">
-// //                           Email Address
-// //                         </label>
-// //                         <input
-// //                           type="email"
-// //                           className="form-control py-2 shadow-sm"
-// //                           placeholder="name@example.com"
-// //                           required
-// //                           onChange={(e) =>
-// //                             setLoginData({
-// //                               ...loginData,
-// //                               email: e.target.value,
-// //                             })
-// //                           }
-// //                         />
-// //                       </div>
-// //                       <div className="mb-3">
-// //                         <label className="small fw-bold text-muted mb-1">
-// //                           Password
-// //                         </label>
-// //                         <input
-// //                           type="password"
-// //                           className="form-control py-2 shadow-sm"
-// //                           placeholder="••••••••"
-// //                           required
-// //                           onChange={(e) =>
-// //                             setLoginData({
-// //                               ...loginData,
-// //                               password: e.target.value,
-// //                             })
-// //                           }
-// //                         />
-// //                       </div>
-// //                       <div className="text-end mb-4">
-// //                         <button
-// //                           type="button"
-// //                           className="btn btn-link p-0 text-decoration-none small fw-bold"
-// //                           style={{ color: "#f39c12" }}
-// //                           data-bs-toggle="modal"
-// //                           data-bs-target="#forgotModal">
-// //                           Forgot Password?
-// //                         </button>
-// //                       </div>
-// //                       <button
-// //                         className="btn btn-lg w-100 text-white shadow-sm border-0"
-// //                         style={{ backgroundColor: "#001f3f" }}>
-// //                         Sign In
-// //                       </button>
-// //                     </form>
-// //                   ) : (
-// //                     <form onSubmit={handleRegister}>
-// //                       <div className="mb-3">
-// //                         <label className="small fw-bold text-muted mb-2 d-block text-center">
-// //                           Register As
-// //                         </label>
-// //                         <div className="d-flex gap-2 justify-content-center mb-4">
-// //                           <button
-// //                             type="button"
-// //                             className={`btn btn-sm px-4 border ${registerData.role === "owner" ? "btn-dark" : "btn-outline-secondary"}`}
-// //                             onClick={() =>
-// //                               setRegisterData({
-// //                                 ...registerData,
-// //                                 role: "owner",
-// //                               })
-// //                             }>
-// //                             Owner
-// //                           </button>
-// //                           <button
-// //                             type="button"
-// //                             className={`btn btn-sm px-4 border ${registerData.role === "user" ? "btn-dark" : "btn-outline-secondary"}`}
-// //                             onClick={() =>
-// //                               setRegisterData({ ...registerData, role: "user" })
-// //                             }>
-// //                             Guest
-// //                           </button>
-// //                         </div>
-// //                       </div>
-
-// //                       {/* Profile Image Section using getImgURL */}
-// //                       <div className="text-center mb-4">
-// //                         <div className="position-relative d-inline-block">
-// //                           <img
-// //                             src={imagePreview ? imagePreview : getImgURL(null)}
-// //                             alt="Profile Preview"
-// //                             className="rounded-circle border shadow-sm"
-// //                             style={{
-// //                               width: "100px",
-// //                               height: "100px",
-// //                               objectFit: "cover",
-// //                             }}
-// //                           />
-// //                           <label
-// //                             htmlFor="profileUpload"
-// //                             className="btn btn-sm btn-dark position-absolute bottom-0 end-0 rounded-circle d-flex align-items-center justify-content-center"
-// //                             style={{ width: "32px", height: "32px" }}>
-// //                             <i className="bi bi-camera"></i>
-// //                             <input
-// //                               type="file"
-// //                               id="profileUpload"
-// //                               hidden
-// //                               accept="image/*"
-// //                               onChange={handleImageChange}
-// //                             />
-// //                           </label>
-// //                         </div>
-// //                         <p className="small text-muted mt-2">
-// //                           Upload Profile Picture
-// //                         </p>
-// //                       </div>
-
-// //                       <div className="row g-2 mb-2">
-// //                         <div className="col-md-6">
-// //                           <input
-// //                             type="text"
-// //                             className="form-control shadow-sm"
-// //                             placeholder="Full Name"
-// //                             required
-// //                             onChange={(e) =>
-// //                               setRegisterData({
-// //                                 ...registerData,
-// //                                 fullName: e.target.value,
-// //                               })
-// //                             }
-// //                           />
-// //                         </div>
-// //                         <div className="col-md-6">
-// //                           <input
-// //                             type="email"
-// //                             className="form-control shadow-sm"
-// //                             placeholder="Email Address"
-// //                             required
-// //                             onChange={(e) =>
-// //                               setRegisterData({
-// //                                 ...registerData,
-// //                                 email: e.target.value,
-// //                               })
-// //                             }
-// //                           />
-// //                         </div>
-// //                       </div>
-
-// //                       <div className="row g-2 mb-2">
-// //                         <div className="col-md-6">
-// //                           <input
-// //                             type="text"
-// //                             className="form-control shadow-sm"
-// //                             placeholder="Contact Number"
-// //                             required
-// //                             onChange={(e) =>
-// //                               setRegisterData({
-// //                                 ...registerData,
-// //                                 contactNo: e.target.value,
-// //                               })
-// //                             }
-// //                           />
-// //                         </div>
-// //                         <div className="col-md-6">
-// //                           <input
-// //                             type="text"
-// //                             className="form-control shadow-sm"
-// //                             placeholder="City"
-// //                             required
-// //                             onChange={(e) =>
-// //                               setRegisterData({
-// //                                 ...registerData,
-// //                                 city: e.target.value,
-// //                               })
-// //                             }
-// //                           />
-// //                         </div>
-// //                       </div>
-
-// //                       <div className="row g-2 mb-2">
-// //                         <div className="col-md-6">
-// //                           <input
-// //                             type="text"
-// //                             className="form-control shadow-sm"
-// //                             placeholder="Country"
-// //                             required
-// //                             onChange={(e) =>
-// //                               setRegisterData({
-// //                                 ...registerData,
-// //                                 country: e.target.value,
-// //                               })
-// //                             }
-// //                           />
-// //                         </div>
-// //                         <div className="col-md-6">
-// //                           <input
-// //                             type="password"
-// //                             title="password"
-// //                             className="form-control shadow-sm"
-// //                             placeholder="Password"
-// //                             required
-// //                             onChange={(e) =>
-// //                               setRegisterData({
-// //                                 ...registerData,
-// //                                 password: e.target.value,
-// //                               })
-// //                             }
-// //                           />
-// //                         </div>
-// //                       </div>
-
-// //                       <textarea
-// //                         className="form-control shadow-sm mb-4"
-// //                         placeholder="Complete Address"
-// //                         rows="2"
-// //                         required
-// //                         onChange={(e) =>
-// //                           setRegisterData({
-// //                             ...registerData,
-// //                             address: e.target.value,
-// //                           })
-// //                         }
-// //                       />
-// //                       <button
-// //                         className="btn btn-lg w-100 text-white fw-bold shadow-sm border-0"
-// //                         style={{ backgroundColor: "#001f3f" }}>
-// //                         Create Account
-// //                       </button>
-// //                     </form>
-// //                   )}
-// //                 </>
-// //               )}
-// //             </div>
-// //           </div>
-// //         </div>
-// //       </div>
-
-// //       {/* Forgot Password Modal */}
-// //       <div className="modal fade" id="forgotModal" tabIndex="-1">
-// //         <div className="modal-dialog modal-dialog-centered">
-// //           <div
-// //             className="modal-content border-0 shadow"
-// //             style={{ borderRadius: "16px" }}>
-// //             <div className="modal-body p-4 text-center">
-// //               <h4 className="fw-bold mb-3">Forgot Password</h4>
-// //               <input
-// //                 type="email"
-// //                 className="form-control mb-3"
-// //                 placeholder="Enter Registered Email"
-// //                 onChange={(e) => setResetEmail(e.target.value)}
-// //               />
-// //               <button
-// //                 className="btn w-100 text-white"
-// //                 style={{ backgroundColor: "#001f3f" }}
-// //                 onClick={handleForgotPassword}
-// //                 data-bs-dismiss="modal">
-// //                 Send Reset Code
-// //               </button>
-// //             </div>
-// //           </div>
-// //         </div>
-// //       </div>
-
-// //       {/* Reset Modal */}
-// //       {showResetModal && (
-// //         <div
-// //           className="modal fade show d-block"
-// //           style={{ backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1060 }}>
-// //           <div className="modal-dialog modal-dialog-centered">
-// //             <div className="modal-content border-0 shadow">
-// //               <div className="modal-header border-0 pb-0">
-// //                 <h5 className="modal-title fw-bold">Set New Password</h5>
-// //                 <button
-// //                   type="button"
-// //                   className="btn-close"
-// //                   onClick={() => setShowResetModal(false)}></button>
-// //               </div>
-// //               <form onSubmit={handleResetPassword}>
-// //                 <div className="modal-body">
-// //                   <input
-// //                     type="password"
-// //                     placeholder="New Password"
-// //                     className="form-control mb-3"
-// //                     required
-// //                     onChange={(e) =>
-// //                       setChangePasswordData({
-// //                         ...changePasswordData,
-// //                         password: e.target.value,
-// //                       })
-// //                     }
-// //                   />
-// //                   <input
-// //                     type="password"
-// //                     placeholder="Confirm Password"
-// //                     className="form-control mb-3"
-// //                     required
-// //                     onChange={(e) =>
-// //                       setChangePasswordData({
-// //                         ...changePasswordData,
-// //                         confirmPassword: e.target.value,
-// //                       })
-// //                     }
-// //                   />
-// //                 </div>
-// //                 <div className="modal-footer border-0">
-// //                   <button
-// //                     type="submit"
-// //                     className="btn text-white w-100"
-// //                     style={{ backgroundColor: "#001f3f" }}>
-// //                     Update Password
-// //                   </button>
-// //                 </div>
-// //               </form>
-// //             </div>
-// //           </div>
-// //         </div>
-// //       )}
-// //     </div>
-// //   );
-// // };;
-
-// // export default Login;
-
 // import React, { useState, useEffect } from "react";
-// import { useDispatch, useSelector } from "react-redux";
-// import { loginUser, registerUser, verifyOtp, logout } from "./authSlice";
+// import { useDispatch } from "react-redux";
+// import { loginUser, logout } from "./authSlice";
 // import { toast } from "react-toastify";
-// import { useNavigate } from "react-router-dom";
-// import {
-//   forgotPasswordAPI,
-//   resetPasswordAPI,
-//   verifyOtpAPI,
-//   getImgURL,
-// } from "../../services/authService";
+// import { useNavigate, Link } from "react-router-dom";
 
 // const Login = () => {
 //   const navigate = useNavigate();
 //   const dispatch = useDispatch();
-//   const { otpEmail, isLoading } = useSelector((state) => state.auth);
+//   const [loginData, setLoginData] = useState({ email: "", password: "" });
+//   const [loading, setLoading] = useState(false);
 
-//   // --- Session Management ---
 //   const SESSION_DURATION = 24 * 60 * 60 * 1000;
+
 //   const startSession = () => {
 //     const expiryTime = Date.now() + SESSION_DURATION;
 //     localStorage.setItem("sessionExpiry", expiryTime.toString());
@@ -560,517 +24,105 @@
 //       toast.warn("Session expired. Please login again.");
 //     }
 //   }, [dispatch]);
-
-//   // --- UI States ---
-//   const [isLoginTab, setIsLoginTab] = useState(true);
-//   const [showOtp, setShowOtp] = useState(false);
-//   const [otp, setOtp] = useState("");
-//   const [mode, setMode] = useState("signup"); // 'signup' or 'forgot'
-//   const [showResetForm, setShowResetForm] = useState(false);
-//   const [resetEmail, setResetEmail] = useState("");
-//   const [imagePreview, setImagePreview] = useState(null);
-
-//   const [loginData, setLoginData] = useState({ email: "", password: "" });
-//   const [registerData, setRegisterData] = useState({
-//     fullName: "",
-//     email: "",
-//     password: "",
-//     address: "",
-//     country: "",
-//     city: "",
-//     contactNo: "",
-//     role: "user",
-//     status: "deactive",
-//     profileImage: null,
-//   });
-
-//   const [changePasswordData, setChangePasswordData] = useState({
-//     password: "",
-//     confirmPassword: "",
-//   });
-
-//   // Handle Image Selection
-//   const handleImageChange = (e) => {
-//     const file = e.target.files[0];
-//     if (file) {
-//       setRegisterData({ ...registerData, profileImage: file });
-//       setImagePreview(URL.createObjectURL(file));
-//     }
-//   };
-
-//   // 1. LOGIN HANDLER
-//   const handleLogin = async (e) => {
-//     e.preventDefault();
+// const handleLogin = async (e) => {
+//   e.preventDefault();
+//   setLoading(true);
+//   try {
 //     const res = await dispatch(loginUser(loginData));
 
 //     if (res.meta.requestStatus === "fulfilled") {
-//       const userData = res.payload.auth;
-//       const token = res.payload.token;
+//       // ⭐ FIX: payload structure changed from .auth to .user
+//       const userData = res.payload.user;
 
-//       // ✅ CHECK ROLE: Agar role admin hai toh block karein
+//       // 🛑 ADMIN BLOCK
 //       if (userData.role === "admin") {
 //         toast.error(
-//           "Admins are not allowed to login from the frontend portal.",
+//           "Unauthorized: Admin cannot login from here. Use Admin Panel.",
 //         );
-//         // Clear any potential half-logged state if necessary
+//         dispatch(logout());
+//         setLoading(false);
 //         return;
 //       }
 
-//       // Save to localStorage ONLY for users and owners
-//       localStorage.setItem("token", token);
-//       localStorage.setItem("user", JSON.stringify(userData));
+//       // ✅ SUCCESS
+//       // Note: We don't need manual localStorage.setItem here anymore
+//       // because authSlice + storage.js is already doing it!
 
-//       // Trigger Navbar Sync
-//       window.dispatchEvent(new Event("storage"));
-
+//       toast.success(`Welcome, ${userData.fullName}`);
 //       startSession();
-//       toast.success(`Welcome back, ${userData?.fullName || "User"}`);
 //       navigate("/");
 //     } else {
-//       toast.error(res.payload || "Login Failed");
+//       // Error from thunk rejectWithValue
+//       toast.error(res.payload || "Authentication failed");
 //     }
-//   };
-
-//   // 2. SIGNUP HANDLER
-//   const handleRegister = async (e) => {
-//     e.preventDefault();
-//     const formData = new FormData();
-//     Object.keys(registerData).forEach((key) => {
-//       formData.append(key, registerData[key]);
-//     });
-
-//     const res = await dispatch(registerUser(formData));
-//     if (res.meta.requestStatus === "fulfilled") {
-//       toast.success("OTP sent to your email");
-//       setMode("signup");
-//       setShowOtp(true);
-//     } else {
-//       toast.error(res.payload || "Signup Failed");
-//     }
-//   };
-
-//   // 3. OTP VERIFICATION HANDLER
-//   const handleVerifyOtp = async (e) => {
-//     e.preventDefault();
-//     const emailToVerify =
-//       mode === "forgot" ? resetEmail : otpEmail || registerData.email;
-
-//     try {
-//       if (mode === "signup") {
-//         const res = await dispatch(verifyOtp({ email: emailToVerify, otp }));
-//         if (res.meta.requestStatus === "fulfilled") {
-//           toast.success("Account verified! Please login.");
-//           setShowOtp(false);
-//           setIsLoginTab(true);
-//         } else {
-//           toast.error(res.payload || "Invalid OTP");
-//         }
-//       } else {
-//         const res = await verifyOtpAPI({ email: emailToVerify, otp });
-//         if (res) {
-//           toast.success("OTP Verified! Set your new password.");
-//           setShowOtp(false);
-//           setShowResetForm(true);
-//         }
-//       }
-//     } catch (error) {
-//       toast.error("Verification failed");
-//     }
-//   };
-
-//   // 4. FORGOT PASSWORD
-//   const handleForgotPassword = async (e) => {
-//     e.preventDefault();
-//     if (!resetEmail) return toast.error("Please enter email");
-//     try {
-//       await forgotPasswordAPI({ email: resetEmail });
-//       setMode("forgot");
-//       setShowOtp(true);
-//       toast.info("Verification code sent to " + resetEmail);
-//     } catch (err) {
-//       toast.error("User not found");
-//     }
-//   };
-
-//   // 5. RESET PASSWORD
-//   const handleResetPassword = async (e) => {
-//     e.preventDefault();
-//     if (changePasswordData.password !== changePasswordData.confirmPassword) {
-//       return toast.error("Passwords do not match");
-//     }
-//     try {
-//       await resetPasswordAPI({
-//         email: resetEmail,
-//         newPassword: changePasswordData.password,
-//         confirmPassword: changePasswordData.confirmPassword,
-//       });
-//       toast.success("Password reset successfully! Please login.");
-//       setShowResetForm(false);
-//       setIsLoginTab(true);
-//     } catch (err) {
-//       toast.error("Reset Failed");
-//     }
-//   };
-
+//   } catch (error) {
+//     // This catches actual code crashes
+//     console.error("Login Error:", error);
+//     toast.error("An unexpected error occurred");
+//   } finally {
+//     setLoading(false);
+//   }
+// };
 //   return (
-//     <div className="bg-light min-vh-100 d-flex align-items-center py-5">
-//       <div className="container">
-//         <div className="row justify-content-center">
-//           <div className="col-md-8 col-lg-6">
-//             <div
-//               className="card border-0 shadow-lg p-4"
-//               style={{ borderRadius: "16px" }}>
-//               <h2
-//                 className="fw-bold text-center mb-4"
-//                 style={{ color: "#001f3f" }}>
-//                 {" "}
-//                 MyUma{" "}
-//               </h2>
-
-//               {/* VIEW LOGIC */}
-//               {showOtp ? (
-//                 <form onSubmit={handleVerifyOtp}>
-//                   <h4 className="text-center fw-bold">Verify OTP</h4>
-//                   <p className="text-center text-muted mb-4 small">
-//                     Enter the 6-digit code sent to your email
-//                   </p>
-//                   <input
-//                     type="text"
-//                     className="form-control form-control-lg mb-3 text-center"
-//                     placeholder="Enter OTP"
-//                     value={otp}
-//                     onChange={(e) => setOtp(e.target.value)}
-//                     required
-//                   />
-//                   <button
-//                     className="btn btn-lg w-100 text-white"
-//                     style={{ backgroundColor: "#001f3f" }}
-//                     disabled={isLoading}>
-//                     {isLoading ? "Verifying..." : "Verify"}
-//                   </button>
-//                   <button
-//                     type="button"
-//                     className="btn btn-link w-100 mt-2 text-muted"
-//                     onClick={() => setShowOtp(false)}>
-//                     Back
-//                   </button>
-//                 </form>
-//               ) : showResetForm ? (
-//                 <form onSubmit={handleResetPassword}>
-//                   <h4 className="fw-bold text-center mb-4">New Password</h4>
-//                   <input
-//                     type="password"
-//                     placeholder="New Password"
-//                     className="form-control py-2 mb-3"
-//                     required
-//                     onChange={(e) =>
-//                       setChangePasswordData({
-//                         ...changePasswordData,
-//                         password: e.target.value,
-//                       })
-//                     }
-//                   />
-//                   <input
-//                     type="password"
-//                     placeholder="Confirm Password"
-//                     className="form-control py-2 mb-4"
-//                     required
-//                     onChange={(e) =>
-//                       setChangePasswordData({
-//                         ...changePasswordData,
-//                         confirmPassword: e.target.value,
-//                       })
-//                     }
-//                   />
-//                   <button
-//                     className="btn btn-lg w-100 text-white"
-//                     style={{ backgroundColor: "#001f3f" }}>
-//                     Update Password
-//                   </button>
-//                 </form>
-//               ) : (
-//                 <>
-//                   <div className="p-1 mb-4 d-flex bg-light rounded-3 border">
-//                     <button
-//                       className={`btn w-50 py-2 border-0 ${isLoginTab ? "bg-white shadow-sm fw-bold" : "text-muted"}`}
-//                       onClick={() => setIsLoginTab(true)}>
-//                       {" "}
-//                       Login{" "}
-//                     </button>
-//                     <button
-//                       className={`btn w-50 py-2 border-0 ${!isLoginTab ? "bg-white shadow-sm fw-bold" : "text-muted"}`}
-//                       onClick={() => setIsLoginTab(false)}>
-//                       {" "}
-//                       Register{" "}
-//                     </button>
-//                   </div>
-
-//                   {isLoginTab ? (
-//                     <form onSubmit={handleLogin}>
-//                       <div className="mb-3">
-//                         <label className="small fw-bold text-muted mb-1">
-//                           Email Address
-//                         </label>
-//                         <input
-//                           type="email"
-//                           className="form-control py-2"
-//                           placeholder="name@example.com"
-//                           required
-//                           onChange={(e) =>
-//                             setLoginData({
-//                               ...loginData,
-//                               email: e.target.value,
-//                             })
-//                           }
-//                         />
-//                       </div>
-//                       <div className="mb-3">
-//                         <label className="small fw-bold text-muted mb-1">
-//                           Password
-//                         </label>
-//                         <input
-//                           type="password"
-//                           className="form-control py-2"
-//                           placeholder="••••••••"
-//                           required
-//                           onChange={(e) =>
-//                             setLoginData({
-//                               ...loginData,
-//                               password: e.target.value,
-//                             })
-//                           }
-//                         />
-//                       </div>
-//                       <div className="text-end mb-4">
-//                         <button
-//                           type="button"
-//                           className="btn btn-link p-0 text-decoration-none small fw-bold"
-//                           style={{ color: "#f39c12" }}
-//                           data-bs-toggle="modal"
-//                           data-bs-target="#forgotModal">
-//                           {" "}
-//                           Forgot Password?{" "}
-//                         </button>
-//                       </div>
-//                       <button
-//                         className="btn btn-lg w-100 text-white shadow-sm"
-//                         style={{ backgroundColor: "#001f3f" }}>
-//                         Sign In
-//                       </button>
-//                     </form>
-//                   ) : (
-//                     <form onSubmit={handleRegister}>
-//                       <div className="text-center mb-4">
-//                         <label className="small fw-bold text-muted d-block mb-2">
-//                           Register As
-//                         </label>
-//                         <div className="btn-group w-100">
-//                           <button
-//                             type="button"
-//                             className={`btn btn-sm ${registerData.role === "owner" ? "btn-dark" : "btn-outline-dark"}`}
-//                             onClick={() =>
-//                               setRegisterData({
-//                                 ...registerData,
-//                                 role: "owner",
-//                               })
-//                             }>
-//                             {" "}
-//                             Owner{" "}
-//                           </button>
-//                           <button
-//                             type="button"
-//                             className={`btn btn-sm ${registerData.role === "user" ? "btn-dark" : "btn-outline-dark"}`}
-//                             onClick={() =>
-//                               setRegisterData({ ...registerData, role: "user" })
-//                             }>
-//                             {" "}
-//                             Guest/User{" "}
-//                           </button>
-//                         </div>
-//                       </div>
-
-//                       <div className="text-center mb-3">
-//                         <div className="position-relative d-inline-block">
-//                           <img
-//                             src={imagePreview || getImgURL(null)}
-//                             alt="Profile"
-//                             className="rounded-circle border"
-//                             style={{
-//                               width: "80px",
-//                               height: "80px",
-//                               objectFit: "cover",
-//                             }}
-//                           />
-//                           <label
-//                             htmlFor="profileUpload"
-//                             className="btn btn-sm btn-dark position-absolute bottom-0 end-0 rounded-circle p-1">
-//                             <i className="bi bi-camera small"></i>
-//                             <input
-//                               type="file"
-//                               id="profileUpload"
-//                               hidden
-//                               accept="image/*"
-//                               onChange={handleImageChange}
-//                             />
-//                           </label>
-//                         </div>
-//                       </div>
-
-//                       <div className="row g-2 mb-2">
-//                         <div className="col-md-6">
-//                           <input
-//                             type="text"
-//                             className="form-control"
-//                             placeholder="Full Name"
-//                             required
-//                             onChange={(e) =>
-//                               setRegisterData({
-//                                 ...registerData,
-//                                 fullName: e.target.value,
-//                               })
-//                             }
-//                           />
-//                         </div>
-//                         <div className="col-md-6">
-//                           <input
-//                             type="email"
-//                             className="form-control"
-//                             placeholder="Email"
-//                             required
-//                             onChange={(e) =>
-//                               setRegisterData({
-//                                 ...registerData,
-//                                 email: e.target.value,
-//                               })
-//                             }
-//                           />
-//                         </div>
-//                       </div>
-
-//                       <div className="row g-2 mb-2">
-//                         <div className="col-md-6">
-//                           <input
-//                             type="text"
-//                             className="form-control"
-//                             placeholder="Contact No"
-//                             required
-//                             onChange={(e) =>
-//                               setRegisterData({
-//                                 ...registerData,
-//                                 contactNo: e.target.value,
-//                               })
-//                             }
-//                           />
-//                         </div>
-//                         <div className="col-md-6">
-//                           <input
-//                             type="text"
-//                             className="form-control"
-//                             placeholder="City"
-//                             required
-//                             onChange={(e) =>
-//                               setRegisterData({
-//                                 ...registerData,
-//                                 city: e.target.value,
-//                               })
-//                             }
-//                           />
-//                         </div>
-//                       </div>
-
-//                       <div className="row g-2 mb-2">
-//                         <div className="col-md-6">
-//                           <input
-//                             type="text"
-//                             className="form-control"
-//                             placeholder="Country"
-//                             required
-//                             onChange={(e) =>
-//                               setRegisterData({
-//                                 ...registerData,
-//                                 country: e.target.value,
-//                               })
-//                             }
-//                           />
-//                         </div>
-//                         <div className="col-md-6">
-//                           <input
-//                             type="password"
-//                             title="password"
-//                             className="form-control"
-//                             placeholder="Password"
-//                             required
-//                             onChange={(e) =>
-//                               setRegisterData({
-//                                 ...registerData,
-//                                 password: e.target.value,
-//                               })
-//                             }
-//                           />
-//                         </div>
-//                       </div>
-
-//                       <textarea
-//                         className="form-control mb-4"
-//                         placeholder="Complete Address"
-//                         rows="2"
-//                         required
-//                         onChange={(e) =>
-//                           setRegisterData({
-//                             ...registerData,
-//                             address: e.target.value,
-//                           })
-//                         }
-//                       />
-//                       <button
-//                         className="btn btn-lg w-100 text-white fw-bold"
-//                         style={{ backgroundColor: "#001f3f" }}>
-//                         Create Account
-//                       </button>
-//                     </form>
-//                   )}
-//                 </>
-//               )}
-//             </div>
+//     <div className="container d-flex align-items-center justify-content-center min-vh-100">
+//       <div
+//         className="card shadow-lg border-0 p-4"
+//         style={{ width: "100%", maxWidth: "450px", borderRadius: "15px" }}>
+//         <h2 className="text-center fw-bold mb-4" style={{ color: "#001f3f" }}>
+//           MyUma
+//         </h2>
+//         <form onSubmit={handleLogin}>
+//           <div className="mb-3">
+//             <label className="form-label small fw-bold">Email Address</label>
+//             <input
+//               type="email"
+//               className="form-control py-2"
+//               placeholder="name@example.com"
+//               required
+//               onChange={(e) =>
+//                 setLoginData({ ...loginData, email: e.target.value })
+//               }
+//             />
 //           </div>
-//         </div>
-//       </div>
-
-//       {/* Forgot Password Modal */}
-//       <div className="modal fade" id="forgotModal" tabIndex="-1">
-//         <div className="modal-dialog modal-dialog-centered">
-//           <div
-//             className="modal-content border-0 shadow"
-//             style={{ borderRadius: "16px" }}>
-//             <div className="modal-body p-4 text-center">
-//               <h4 className="fw-bold mb-3">Forgot Password</h4>
-//               <p className="text-muted small">
-//                 Enter your email to receive a verification code.
-//               </p>
-//               <input
-//                 type="email"
-//                 className="form-control mb-3"
-//                 placeholder="Registered Email"
-//                 onChange={(e) => setResetEmail(e.target.value)}
-//               />
-//               <button
-//                 className="btn w-100 text-white"
-//                 style={{ backgroundColor: "#001f3f" }}
-//                 onClick={handleForgotPassword}
-//                 data-bs-dismiss="modal">
-//                 {" "}
-//                 Send Code{" "}
-//               </button>
-//             </div>
+//           <div className="mb-3">
+//             <label className="form-label small fw-bold">Password</label>
+//             <input
+//               type="password"
+//               className="form-control py-2"
+//               placeholder="••••••••"
+//               required
+//               onChange={(e) =>
+//                 setLoginData({ ...loginData, password: e.target.value })
+//               }
+//             />
 //           </div>
-//         </div>
+//           <div className="text-end mb-3">
+//             <Link
+//               to="/forgot-password"
+//               style={{ color: "#f39c12", textDecoration: "none" }}
+//               className="small fw-bold">
+//               Forgot Password?
+//             </Link>
+//           </div>
+//           <button
+//             className="btn btn-lg w-100 text-white"
+//             style={{ backgroundColor: "#001f3f" }}
+//             disabled={loading}>
+//             {loading ? "Signing in..." : "Sign In"}
+//           </button>
+//         </form>
+//         <p className="text-center mt-4 small">
+//           Don't have an account?{" "}
+//           <Link to="/register" className="fw-bold text-decoration-none">
+//             Register Here
+//           </Link>
+//         </p>
 //       </div>
 //     </div>
 //   );
-// };;
+// };
 
 // export default Login;
-
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { loginUser, logout } from "./authSlice";
@@ -1090,47 +142,62 @@ const Login = () => {
     localStorage.setItem("sessionExpiry", expiryTime.toString());
   };
 
+  // Check session validity on component mount and every minute
   useEffect(() => {
-    const expiry = localStorage.getItem("sessionExpiry");
-    if (expiry && Date.now() > parseInt(expiry)) {
-      dispatch(logout());
-      toast.warn("Session expired. Please login again.");
-    }
-  }, [dispatch]);
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setLoading(true);
-  try {
-    const res = await dispatch(loginUser(loginData));
-
-    if (res.meta.requestStatus === "fulfilled") {
-      const userData = res.payload.auth;
-
-      // 🛑 ADMIN BLOCK: Frontend में Admin Allow नहीं है
-      if (userData.role === "admin") {
-        toast.error(
-          "Unauthorized: Admin cannot login from here. Use Admin Panel.",
-        );
-        dispatch(logout()); // Redux state साफ़ करें
-        setLoading(false);
-        return; // यहाँ से आगे नहीं बढ़ेगा
+    const checkSession = () => {
+      const expiry = localStorage.getItem("sessionExpiry");
+      if (expiry && Date.now() > parseInt(expiry)) {
+        dispatch(logout());
+        localStorage.removeItem("sessionExpiry");
+        toast.warn("Session expired. Please login again.");
+        navigate("/login");
       }
+    };
 
-      // ✅ Only for User and Owner
-      localStorage.setItem("token", res.payload.token);
-      localStorage.setItem("user", JSON.stringify(userData));
-      toast.success(`Welcome, ${userData.fullName}`);
-      navigate("/");
-    } else {
-      // अगर यूजर नहीं मिला तो (Auth Not Found)
-      toast.error(res.payload || "Authentication failed");
+    checkSession();
+    const interval = setInterval(checkSession, 60000);
+    return () => clearInterval(interval);
+  }, [dispatch, navigate]);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await dispatch(loginUser(loginData));
+
+      if (res.meta.requestStatus === "fulfilled") {
+        // Correctly target user object from payload
+        const userData = res.payload.user;
+
+        // 🛑 ADMIN BLOCK LOGIC
+        if (userData.role === "admin") {
+          // Immediately log out and show error toast
+          dispatch(logout());
+          localStorage.removeItem("sessionExpiry");
+          toast.error(
+            "Unauthorized: Admins cannot login through this portal. Please use the Admin Panel.",
+          );
+          setLoading(false);
+          return; // Stop the function here
+        }
+
+        // ✅ SUCCESS FOR USER / OWNER
+        toast.success(`Welcome, ${userData.fullName}`);
+        startSession();
+        navigate("/");
+      } else {
+        toast.error(
+          res.payload || "Authentication failed. Check your credentials.",
+        );
+      }
+    } catch (error) {
+      console.error("Login System Error:", error);
+      toast.error("A system error occurred. Please try again later.");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    toast.error("An unexpected error occurred");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
   return (
     <div className="container d-flex align-items-center justify-content-center min-vh-100">
       <div
@@ -1141,24 +208,30 @@ const handleLogin = async (e) => {
         </h2>
         <form onSubmit={handleLogin}>
           <div className="mb-3">
-            <label className="form-label small fw-bold">Email Address</label>
+            <label className="form-label small fw-bold text-muted text-uppercase">
+              Email Address
+            </label>
             <input
               type="email"
-              className="form-control py-2"
+              className="form-control py-2 shadow-none"
               placeholder="name@example.com"
               required
+              autoComplete="email"
               onChange={(e) =>
                 setLoginData({ ...loginData, email: e.target.value })
               }
             />
           </div>
           <div className="mb-3">
-            <label className="form-label small fw-bold">Password</label>
+            <label className="form-label small fw-bold text-muted text-uppercase">
+              Password
+            </label>
             <input
               type="password"
-              className="form-control py-2"
+              className="form-control py-2 shadow-none"
               placeholder="••••••••"
               required
+              autoComplete="current-password"
               onChange={(e) =>
                 setLoginData({ ...loginData, password: e.target.value })
               }
@@ -1173,15 +246,21 @@ const handleLogin = async (e) => {
             </Link>
           </div>
           <button
-            className="btn btn-lg w-100 text-white"
+            className="btn btn-lg w-100 text-white shadow-sm"
             style={{ backgroundColor: "#001f3f" }}
             disabled={loading}>
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? (
+              <span className="spinner-border spinner-border-sm me-2"></span>
+            ) : null}
+            {loading ? "Authorizing..." : "Sign In"}
           </button>
         </form>
-        <p className="text-center mt-4 small">
+        <p className="text-center mt-4 small text-muted">
           Don't have an account?{" "}
-          <Link to="/register" className="fw-bold text-decoration-none">
+          <Link
+            to="/register"
+            className="fw-bold text-decoration-none"
+            style={{ color: "#001f3f" }}>
             Register Here
           </Link>
         </p>

@@ -4,10 +4,9 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "./index.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-
-// ✅ ADD THIS
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
 
 function App() {
   return (

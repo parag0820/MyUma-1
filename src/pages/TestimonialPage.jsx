@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { getTestimonialsAPI, getImgURL } from "../services/authService";
 
-// Swiper Components aur Styles import karein
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
 
-// Swiper CSS import karein
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";

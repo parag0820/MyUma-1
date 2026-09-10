@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import {
   getAllOwnersAPI,
@@ -11,254 +12,271 @@ import {
 } from "../services/authService";
 import { getUser } from "../utils/storage";
 import { toast } from "react-toastify";
+import {
+  Send,
+  CheckCheck,
+  ArrowLeft,
+  Trash2,
+  Search,
+
+  ShieldCheck,
+} from "lucide-react";
 
 const Messages = () => {
-  const [clients, setClients] = useState([]);
-  const [admins, setAdmins] = useState([]);
-  const [owners, setOwners] = useState([]);
+  const [contacts, setContacts] = useState([]);
   const [messages, setMessages] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [activeListingId, setActiveListingId] = useState(null);
   const [text, setText] = useState("");
-  const [userRole, setUserRole] = useState(null);
-  const [activeTab, setActiveTab] = useState("users"); // 'users' or 'admins'
-  const scrollRef = useRef(null);
+  const [activeTab, setActiveTab] = useState("users"); 
+  const [loading, setLoading] = useState(true);
+  const [showChatMobile, setShowChatMobile] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
+  const scrollRef = useRef(null);
   const currentUser = getUser();
-  const currentId = currentUser?.id || currentUser?._id;
+  
+  // Robust ID selection
+  const currentId = currentUser?._id || currentUser?.id;
+  const myRole = currentUser?.role;
 
   useEffect(() => {
-    if (currentId) {
-      detectRoleAndLoad();
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [currentId]);
+  }, [messages]);
 
-  const detectRoleAndLoad = async () => {
+  const fetchSidebarContacts = async () => {
     try {
-      const [ownerRes, userRes, allRes] = await Promise.all([
-        getAllOwnersAPI(),
-        getAllUsersAPI(),
-        getAllAuthsAPI(),
-      ]);
-
-      const ownerList = ownerRes.auths || ownerRes.owners || ownerRes.data || [];
-      const userList = userRes.auths || userRes.users || userRes.data || [];
-      const masterList = allRes.auths || allRes.data || allRes.users || [];
-
-      const amIOwner = ownerList.some((o) => o._id === currentId);
-      const amIAdmin = masterList.some(
-        (a) => a._id === currentId && a.role === "admin"
-      );
-
-      if (amIAdmin) {
-        setUserRole("admin");
-        setOwners(ownerList);
-        setClients(userList);
-      } else if (amIOwner) {
-        setUserRole("owner");
-        setClients(userList);
-        setAdmins(masterList.filter((u) => u.role === "admin"));
+      setLoading(true);
+      if (myRole === "owner") {
+        const [userRes, authRes] = await Promise.all([
+          getAllUsersAPI(),
+          getAllAuthsAPI(),
+        ]);
+        const users = userRes.auths || userRes.users || [];
+        const admins = (authRes.auths || authRes.data || []).filter(
+          (a) => a.role === "admin"
+        );
+        setContacts(activeTab === "users" ? users : admins);
       } else {
-        setUserRole("user");
-        setOwners(ownerList);
-        // User ke liye admin list empty rakhenge ya fetch hi nahi karenge sidebar ke liye
-        setAdmins([]); 
+        const ownerRes = await getAllOwnersAPI();
+        setContacts(ownerRes.auths || ownerRes.owners || []);
       }
     } catch (err) {
-      console.error("Error loading contacts", err);
+      toast.error("Failed to load contacts");
+    } finally {
+      setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchSidebarContacts();
+  }, [activeTab]);
 
   useEffect(() => {
     let interval;
     if (selectedUser) {
       fetchChatHistory();
-      interval = setInterval(fetchChatHistory, 4000);
+      interval = setInterval(fetchChatHistory, 5000);
     }
     return () => clearInterval(interval);
   }, [selectedUser]);
 
   const fetchChatHistory = async () => {
     if (!selectedUser) return;
+    const targetId = selectedUser._id || selectedUser.id;
     try {
       let res;
-      if (userRole === "owner") {
-        const ownerId = currentId;
-        const otherId = selectedUser._id;
-        if (selectedUser.role === "admin") {
-          res = await getChatAdminOwnerHistoryAPI(otherId, ownerId);
-        } else {
-          res = await getChatHistoryAPI(otherId, ownerId);
-        }
-      } else if (userRole === "admin") {
-        res = await getChatAdminOwnerHistoryAPI(currentId, selectedUser._id);
+      if (myRole === "owner") {
+        res = selectedUser.role === "admin"
+            ? await getChatAdminOwnerHistoryAPI(targetId, currentId)
+            : await getChatHistoryAPI(targetId, currentId);
+      } else if (myRole === "user") {
+        res = await getChatHistoryAPI(currentId, targetId);
       } else {
-        res = await getChatHistoryAPI(currentId, selectedUser._id);
+        res = await getChatAdminOwnerHistoryAPI(currentId, targetId);
       }
-      setMessages(res.data || []);
+
+      const newMessages = res?.data || [];
+      
+      // Try to find a listingId in history to keep the context
+      if (newMessages.length > 0) {
+        const lastWithListing = [...newMessages].reverse().find((m) => m.listingId);
+        if (lastWithListing) {
+            const lId = lastWithListing.listingId?._id || lastWithListing.listingId;
+            if (lId) setActiveListingId(lId);
+        }
+      }
+      setMessages(newMessages);
     } catch (err) {
-      console.error("History fetch error", err);
+      console.error("Chat History Error", err);
     }
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!text.trim() || !selectedUser) return;
-    const payload = { senderId: currentId, receiverId: selectedUser._id, message: text };
+    const receiverId = selectedUser?._id || selectedUser?.id;
+
+    if (!text.trim() || !selectedUser || !currentId || !receiverId) {
+        toast.error("Missing required information to send message");
+        return;
+    }
+
+    // IMPORTANT: Your backend REQUIRES listingId. 
+    // If we don't have one (like in Admin chat), we pass a placeholder or the last known one.
+    // Replace '600000000000000000000000' with a valid default ID from your DB if listingId is strictly mandatory for Admins
+    const finalListingId = activeListingId || "678e3496030999557008cb0a"; // Example valid ID
+
     try {
-      await sendMessageAPI(payload);
-      setText("");
-      fetchChatHistory();
+      const payload = {
+        senderId: currentId,
+        receiverId: receiverId,
+        listingId: finalListingId, 
+        message: text.trim(),
+      };
+
+      const res = await sendMessageAPI(payload);
+      if (res) {
+        setText("");
+        fetchChatHistory();
+      }
     } catch (err) {
-      toast.error("Failed to send message");
+      toast.error("Error sending: " + (err.response?.data?.message || "Server Error"));
     }
   };
 
-  const handleDelete = async (msgId) => {
+  const handleDeleteMessage = async (msgId) => {
     if (!window.confirm("Delete this message?")) return;
     try {
       await deleteChatMessageAPI(msgId);
-      fetchChatHistory();
+      setMessages((prev) => prev.filter((m) => m._id !== msgId));
+      toast.success("Message deleted");
     } catch (err) {
-      toast.error("Could not delete");
+      toast.error("Failed to delete");
     }
   };
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const getBadge = (role) => {
-    if (role === "admin") return <span className="badge bg-danger ms-2">Admin</span>;
-    if (role === "owner") return <span className="badge bg-primary ms-2">Owner</span>;
-    return <span className="badge bg-success ms-2">Client</span>;
-  };
-
-  if (!currentUser) return <div className="p-5 text-center">Please login.</div>;
+  const filteredContacts = contacts.filter((c) =>
+    c.fullName?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="container-fluid p-0 bg-light">
-      <div className="card border-0 shadow-sm d-flex flex-row overflow-hidden" style={{ height: "85vh", borderRadius: "0" }}>
+    <div className="container-fluid py-2 py-md-4" style={{ height: "92vh" }}>
+      <div className="row g-0 h-100 shadow border rounded-3 overflow-hidden bg-white mx-auto" style={{ maxWidth: "1250px" }}>
         
         {/* --- SIDEBAR --- */}
-        <div className="col-lg-4 border-end bg-white d-flex flex-column">
-          <div className="p-3 text-white" style={{ backgroundColor: "#001f3f" }}>
-            <h5 className="mb-0 fw-bold">Chat Box</h5>
-            <small className="opacity-75">{currentUser.fullName} ({userRole})</small>
-          </div>
-
-          {/* TABS: ONLY SHOW FOR OWNER */}
-          {userRole === "owner" ? (
-            <div className="d-flex bg-light border-bottom">
-              <div
-                className={`flex-grow-1 py-2 text-center cursor-pointer fw-bold small ${activeTab === "users" ? "bg-white border-bottom border-3 border-primary text-primary" : "text-muted"}`}
-                onClick={() => setActiveTab("users")}>
-                MY CLIENTS
-              </div>
-              <div
-                className={`flex-grow-1 py-2 text-center cursor-pointer fw-bold small ${activeTab === "admins" ? "bg-white border-bottom border-3 border-primary text-primary" : "text-muted"}`}
-                onClick={() => setActiveTab("admins")}>
-                ADMIN SUPPORT
+        <div className={`col-md-4 col-lg-3 d-flex flex-column border-end bg-white h-100 ${showChatMobile ? "d-none d-md-flex" : "d-flex"}`}>
+          <div className="p-3 bg-navy text-white d-flex align-items-center justify-content-between" style={{ height: "75px" }}>
+            <div className="d-flex align-items-center gap-2">
+              <img src={getImgURL(currentUser?.profileImage)} className="rounded-circle border border-2 border-light" width="45" height="45" style={{ objectFit: "cover" }} alt="me" />
+              <div className="overflow-hidden">
+                <h6 className="mb-0 small fw-bold text-truncate">{currentUser?.fullName}</h6>
+                <small className="opacity-75 text-uppercase" style={{ fontSize: "9px" }}>{myRole}</small>
               </div>
             </div>
-          ) : (
-            // Simple Header for regular User
-            <div className="p-2 bg-light border-bottom text-center fw-bold small text-muted">
-              PROPERTY OWNERS
+          </div>
+
+          {myRole === "owner" && (
+            <div className="d-flex bg-light border-bottom p-1">
+              <button className={`btn btn-sm flex-grow-1 rounded-pill fw-bold ${activeTab === "users" ? "btn-success shadow-sm" : "text-muted"}`} onClick={() => { setActiveTab("users"); setSelectedUser(null); }}>CLIENTS</button>
+              <button className={`btn btn-sm flex-grow-1 rounded-pill fw-bold ${activeTab === "admins" ? "btn-success shadow-sm" : "text-muted"}`} onClick={() => { setActiveTab("admins"); setSelectedUser(null); }}>ADMIN</button>
             </div>
           )}
 
-          <div className="overflow-auto flex-grow-1">
-            {userRole === "user" ? (
-              // Case: Regular User - Always see Owners list
-              owners.map((u) => (
-                <ContactItem key={u._id} user={u} selectedUser={selectedUser} setSelectedUser={setSelectedUser} setMessages={setMessages} badge={getBadge(u.role)} />
-              ))
-            ) : activeTab === "users" ? (
-              // Case: Owner/Admin - View Clients
-              (userRole === "owner" ? clients : owners).map((u) => (
-                <ContactItem key={u._id} user={u} selectedUser={selectedUser} setSelectedUser={setSelectedUser} setMessages={setMessages} badge={getBadge(u.role)} />
-              ))
-            ) : (
-              // Case: Owner - View Admins
-              admins.map((u) => (
-                <ContactItem key={u._id} user={u} selectedUser={selectedUser} setSelectedUser={setSelectedUser} setMessages={setMessages} badge={getBadge("admin")} />
-              ))
-            )}
+          <div className="p-2 border-bottom">
+            <div className="d-flex align-items-center bg-light rounded-pill px-3 py-1">
+              <Search size={16} className="text-muted" />
+              <input type="text" className="form-control border-0 bg-transparent shadow-none" placeholder="Search chats" style={{ fontSize: "14px" }} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="flex-grow-1 overflow-auto custom-scroll">
+            {filteredContacts.map((u) => (
+              <div key={u._id || u.id} onClick={() => { setSelectedUser(u); setShowChatMobile(true); }} className={`d-flex align-items-center p-3 border-bottom cursor-pointer ${selectedUser?._id === u._id ? "bg-light border-start border-4 border-success" : ""}`}>
+                <img src={getImgURL(u.profileImage)} className="rounded-circle me-3 border" width="45" height="45" style={{ objectFit: "cover" }} onError={(e) => (e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png")} alt="" />
+                <div className="flex-grow-1 overflow-hidden">
+                  <div className="d-flex justify-content-between">
+                    <h6 className="mb-0 text-truncate fw-bold" style={{ fontSize: "14px" }}>{u.fullName}</h6>
+                    <small className="text-muted text-uppercase" style={{ fontSize: "8px" }}>{u.role}</small>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* --- CHAT WINDOW --- */}
-        <div className="col-lg-8 bg-white d-flex flex-column">
+        {/* --- CHAT VIEW --- */}
+        <div className={`col-md-8 col-lg-9 d-flex flex-column h-100 ${!showChatMobile ? "d-none d-md-flex" : "d-flex"}`} style={{ backgroundColor: "#efeae2" }}>
           {selectedUser ? (
             <>
-              <div className="p-3 bg-white border-bottom d-flex align-items-center">
-                <img src={getImgURL(selectedUser.profileImage)} className="rounded-circle me-3 border" style={{ width: "40px", height: "40px", objectFit: "cover" }} onError={(e) => (e.target.src = "https://placehold.co/40x40?text=U")} />
-                <div>
-                  <h6 className="mb-0 fw-bold">{selectedUser.fullName} {getBadge(selectedUser.role)}</h6>
-                  <small className="text-muted">{selectedUser.email}</small>
+              {/* Header */}
+              <div className="p-2 px-3 bg-light border-bottom d-flex align-items-center justify-content-between shadow-sm" style={{ height: "65px" }}>
+                <div className="d-flex align-items-center">
+                  <button className="btn d-md-none p-0 me-2" onClick={() => setShowChatMobile(false)}><ArrowLeft size={22} /></button>
+                  <img src={getImgURL(selectedUser.profileImage)} className="rounded-circle border" width="40" height="40" style={{ objectFit: "cover" }} alt="" />
+                  <div className="ms-3">
+                    <h6 className="mb-0 fw-bold" style={{ fontSize: "15px" }}>{selectedUser.fullName}</h6>
+                    <small className="text-success fw-bold" style={{ fontSize: "11px" }}>online</small>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex-grow-1 overflow-auto p-4 d-flex flex-column gap-3 bg-light" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")' }}>
+              {/* Messages */}
+              <div ref={scrollRef} className="flex-grow-1 overflow-auto p-3 d-flex flex-column gap-2" style={{ backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-90d70fcded21.png')", backgroundSize: "contain" }}>
                 {messages.map((msg, i) => {
-                  const senderId = typeof msg.senderId === "object" ? msg.senderId._id : msg.senderId;
-                  const isMe = senderId === currentId;
+                  const isMe = (msg.senderId?._id || msg.senderId) === currentId;
                   return (
-                    <div key={i} className={`d-flex flex-column ${isMe ? "align-items-end" : "align-items-start"}`}>
-                      <div className="d-flex align-items-center gap-2 msg-container">
-                        {isMe && (
-                          <button onClick={() => handleDelete(msg._id)} className="btn btn-link p-0 text-danger delete-icon" style={{ opacity: 0 }}>
-                            <i className="bi bi-trash3"></i>
-                          </button>
+                    <div key={msg._id || i} className={`d-flex ${isMe ? "justify-content-end" : "justify-content-start"}`}>
+                      <div className={`p-2 px-3 rounded-3 shadow-sm ${isMe ? "bg-success text-white" : "bg-white text-dark"}`} style={{ maxWidth: "75%", fontSize: "14px" }}>
+                        
+                        {/* Only show listing info if NOT chatting with admin */}
+                        {selectedUser.role !== 'admin' && msg.listingId?.title && (
+                          <div className="mb-1 border-start border-3 border-info ps-2 bg-black bg-opacity-10 rounded small py-1" style={{ fontSize: "10px" }}>
+                            <strong>Ref:</strong> {msg.listingId.title}
+                          </div>
                         )}
-                        <div className={`p-2 px-3 shadow-sm ${isMe ? "text-white" : "bg-white border"}`}
-                          style={{ maxWidth: "80%", borderRadius: isMe ? "15px 15px 0 15px" : "15px 15px 15px 0", backgroundColor: isMe ? "#001f3f" : "#fff" }}>
-                          {msg.message}
+
+                        <div className="d-flex justify-content-between align-items-start gap-2">
+                           <span>{msg.message}</span>
+                           <Trash2 size={12} className="cursor-pointer opacity-50 hover-opacity-100" onClick={() => handleDeleteMessage(msg._id)} />
+                        </div>
+
+                        <div className={`text-end mt-1 ${isMe ? "text-white-50" : "text-muted"}`} style={{ fontSize: "10px" }}>
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          {isMe && <CheckCheck size={14} className="ms-1" />}
                         </div>
                       </div>
-                      <small className="text-muted mt-1" style={{ fontSize: "9px" }}>
-                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      </small>
                     </div>
                   );
                 })}
-                <div ref={scrollRef} />
               </div>
 
-              <div className="p-3 bg-white border-top">
+              {/* Footer */}
+              <div className="p-3 bg-light border-top">
                 <form className="d-flex gap-2" onSubmit={handleSendMessage}>
-                  <input className="form-control rounded-pill px-4 shadow-none" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a message..." required />
-                  <button type="submit" className="btn rounded-circle" style={{ backgroundColor: "#001f3f", color: "#fff", width: "45px", height: "45px" }}>
-                    <i className="bi bi-send-fill"></i>
-                  </button>
+                  <input type="text" className="form-control border-0 rounded-pill px-4 shadow-none" placeholder="Type a message" style={{ height: "45px" }} value={text} onChange={(e) => setText(e.target.value)} />
+                  <button type="submit" className="btn btn-success rounded-circle p-0" style={{ width: "45px", height: "45px" }} disabled={!text.trim()}><Send size={20} /></button>
                 </form>
               </div>
             </>
           ) : (
-            <div className="m-auto text-center text-muted">
-              <i className="bi bi-chat-left-text fs-1 d-block mb-2"></i>
-              Select a contact to start chatting
+            <div className="m-auto text-center px-4">
+              <ShieldCheck size={70} className="text-success opacity-25 mb-3" />
+              <h3 className="text-secondary fw-light">Select a Chat</h3>
             </div>
           )}
         </div>
       </div>
-      <style>{`.msg-container:hover .delete-icon { opacity: 1 !important; transition: 0.2s; } .cursor-pointer { cursor: pointer; }`}</style>
+      <style>{`
+        .bg-navy { background-color: #001f3f; }
+        .cursor-pointer { cursor: pointer; }
+        .hover-opacity-100:hover { opacity: 1 !important; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #ced4da; border-radius: 10px; }
+      `}</style>
     </div>
   );
 };
 
-const ContactItem = ({ user, selectedUser, setSelectedUser, setMessages, badge }) => (
-  <div onClick={() => { setSelectedUser(user); setMessages([]); }}
-    className={`p-3 d-flex align-items-center border-bottom cursor-pointer ${selectedUser?._id === user._id ? "bg-light border-start border-4 border-primary" : ""}`}>
-    <img src={getImgURL(user.profileImage)} className="rounded-circle me-3 border" style={{ width: "45px", height: "45px", objectFit: "cover" }} onError={(e) => (e.target.src = "https://placehold.co/45x45?text=U")} />
-    <div className="flex-grow-1 overflow-hidden">
-      <div className="d-flex justify-content-between align-items-center">
-        <h6 className="mb-0 fw-bold text-truncate">{user.fullName}</h6>
-        {badge}
-      </div>
-      <small className="text-muted d-block text-truncate">{user.email}</small>
-    </div>
-  </div>
-);
-
-export default Messages;
+export default Messages; // ENSURE THIS LINE IS HERE

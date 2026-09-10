@@ -1,6 +1,6 @@
 import React from "react";
 import {
-    HashRouter as Router,
+    BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
@@ -39,14 +39,21 @@ import Reviews from "../pages/Reviews";
 import ListingReviews from "../pages/ListingReviews";
 import ContactUs from "../pages/ContactUs";
 import TestimonialPage from "../pages/TestimonialPage";
-import MyBookings from "../pages/MyBookings";
+import OwnerBookmarks from "../pages/OwnerBookmarks";
 import HomeSearchBar from "../pages/HomeSearchBar";
 import Inquiry from "../pages/Inquiry";
 import UserProfileUpdate from "../pages/UserProfileUpdate";
-import Bookings from "../pages/Bookings";
-
-
-// --- Route Protection Logic ---
+import ManageListings from "../pages/ManageListings";
+import BlogComments from "../pages/BlogComments";
+import UserBookmarks from "../pages/UserBookmarks";// --- Route Protection Logic ---
+import UserFavorites from "../pages/UserFavorites";
+import UserReviews from "../pages/UserReviews";
+import UserInquiry from "../pages/UserInquiry";
+import UserBlogComments from "../pages/UserBlogComments";
+import OwnerDashboard from "../pages/OwnerDashboard";
+import CheckoutPage from "../pages/CheckoutPage";
+import OwnerSubscription from "../pages/OwnerSubscription";
+import SuccessPage from "../pages/SuccessPage";
 const ProtectedRoute = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
 
@@ -54,6 +61,9 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" replace />;
   }
 
+  // ONLY redirect to pricing if they are active/deactive and NOT verifying OTP
+  // However, since /verify-otp is PUBLIC, it won't hit this logic.
+  // The issue is likely the user being auto-logged in.
   if (user && user.status === "deactive") {
     return <Navigate to="/pricing" replace />;
   }
@@ -87,10 +97,8 @@ const AppRoutes = () => {
           <Route path="/home-search" element={<HomeSearchBar />} />
           <Route path="/browse/:slug" element={<BrowseDetails />} />
           <Route path="/browse" element={<BrowseListings />} />
-          <Route path="/user-update-profile" element={<UserProfileUpdate />} />
-
-          
-
+          <Route path="/checkout-details" element={<CheckoutPage />} />
+          <Route path="success" element={<SuccessPage />} />
           {/* --- PROTECTED ROUTES --- */}
           <Route element={<ProtectedRoute />}>
             <Route path="/reviews/:slug" element={<ListingReviews />} />
@@ -103,8 +111,24 @@ const AppRoutes = () => {
                                   <Route path="/booking" element={<Bookings />} />
 
               <Route path="/messages" element={<Messages />} />
-              <Route path="/bookmarks" element={<MyBookings />} />
+              <Route path="/bookmarks" element={<OwnerBookmarks />} />
               <Route path="/inquiries" element={<Inquiry />} />
+              <Route path="/manage-listings" element={<ManageListings />} />
+              <Route path="/blog-comments" element={<BlogComments />} />
+              <Route
+                path="/user-update-profile"
+                element={<UserProfileUpdate />}
+              />
+              <Route path="/user-bookmarks" element={<UserBookmarks />} />
+              <Route path="/user-favorites" element={<UserFavorites />} />
+              <Route path="/user-reviews" element={<UserReviews />} />
+              <Route path="/user-inquiries" element={<UserInquiry />} />
+              <Route
+                path="/user-blog-comments"
+                element={<UserBlogComments />}
+              />
+              <Route path="/subscription" element={<OwnerSubscription />} />
+              <Route path="/owner-dashboard" element={<OwnerDashboard />} />
             </Route>
           </Route>
         </Routes>

@@ -1,179 +1,3 @@
-// import React, { useState, useEffect } from "react";
-// import { useNavigate } from "react-router-dom";
-// import { Search, MapPin, Heart, Navigation } from "lucide-react";
-// import { toast } from "react-toastify";
-// import { useLocation } from "react-router-dom";
-
-// import {
-//   getAllListingsApi,
-//   getImgURL,
-//   addFavoriteAPI,
-//   deleteFavoriteAPI,
-//   getFavoritesByUserAPI,
-// } from "../services/authService";
-// import { getUser } from "../utils/storage";
-
-// const BrowseListings = () => {
-//   const location = useLocation(); // URL state lene ke liye
-//   const navigate = useNavigate();
-//   const [listings, setListings] = useState([]);
-
-//   // URL state se initial value le rahe hain
-//   const searchState = location.state || {};
-
-//   const [filter, setFilter] = useState({
-//     category: searchState.category || "All",
-//     minPrice: "",
-//     maxPrice: "",
-//     location: searchState.location || "", // Location filter added
-//   });
-
-//   const [appliedSearch, setAppliedSearch] = useState(searchState.keyword || "");
-//   const [appliedFilter, setAppliedFilter] = useState(filter);
-
-//   // Jab Home page se nayi search aaye, filters update ho jayein
-//   useEffect(() => {
-//     if (location.state) {
-//       setAppliedSearch(location.state.keyword || "");
-//       setAppliedFilter({
-//         ...filter,
-//         category: location.state.category || "All",
-//         location: location.state.location || "",
-//       });
-//       setFilter({
-//         ...filter,
-//         category: location.state.category || "All",
-//         location: location.state.location || "",
-//       });
-//     }
-//   }, [location.state]);
-
-//   // ✅ Updated Filter Logic for Cards
-//   const filteredListings = listings.filter((item) => {
-//     // 1. Keyword Match (Title)
-//     const titleMatch = item.title
-//       ?.toLowerCase()
-//       .includes(appliedSearch.toLowerCase());
-
-//     // 2. Category Match
-//     const categoryMatch =
-//       appliedFilter.category === "All" ||
-//       item.categoryId?.name === appliedFilter.category ||
-//       item.subcategoryId?.subcategoryName === appliedFilter.category;
-
-//     // 3. Location Match (Check in address, city or state)
-//     const locationMatch =
-//       !appliedFilter.location ||
-//       item.address
-//         ?.toLowerCase()
-//         .includes(appliedFilter.location.toLowerCase()) ||
-//       item.city?.toLowerCase().includes(appliedFilter.location.toLowerCase());
-
-//     // 4. Price Match
-//     const price = item.items?.[0]?.price || 0;
-//     const minMatch =
-//       appliedFilter.minPrice === "" || price >= Number(appliedFilter.minPrice);
-//     const maxMatch =
-//       appliedFilter.maxPrice === "" || price <= Number(appliedFilter.maxPrice);
-
-//     return titleMatch && categoryMatch && locationMatch && minMatch && maxMatch;
-//   });
-//   if (loading)
-//     return (
-//       <div className="min-vh-100 d-flex align-items-center justify-content-center fw-bold">
-//         LOADING...
-//       </div>
-//     );
-
-//   return (
-//     <div className="min-vh-100 bg-light py-5">
-//       <div className="container">
-//         {/* Filter Section */}
-//         <div className="card border-0 shadow-sm p-4 mb-5 rounded-4">
-//           <div className="row g-3 align-items-end">
-//             <div className="col-md-5">
-//               <label className="form-label small fw-bold">SEARCH</label>
-//               <input
-//                 type="text"
-//                 className="form-control"
-//                 placeholder="Search..."
-//                 value={searchQuery}
-//                 onChange={(e) => setSearchQuery(e.target.value)}
-//               />
-//             </div>
-//             <div className="col-md-7 text-end">
-//               <button
-//                 className="btn btn-dark px-5"
-//                 onClick={() => {
-//                   setAppliedSearch(searchQuery);
-//                   setAppliedFilter(filter);
-//                 }}>
-//                 APPLY FILTERS
-//               </button>
-//             </div>
-//           </div>
-//         </div>
-
-//         {/* Grid */}
-//         <div className="row g-4">
-//           {filteredListings.map((item) => {
-//             const isFavorited = favorites.some((fav) => {
-//               const favId =
-//                 typeof fav.itemId === "object" ? fav.itemId._id : fav.itemId;
-//               return favId?.toString() === item._id?.toString();
-//             });
-
-//             return (
-//               <div key={item._id} className="col-12 col-md-6 col-lg-4">
-//                 <div
-//                   className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden"
-//                   style={{ cursor: "pointer" }}
-//                   onClick={() => navigate(`/browse/${slugify(item.title)}`)}>
-//                   <div className="ratio ratio-4x3 position-relative">
-//                     <img
-//                       src={getImgURL(item.images?.[0])}
-//                       alt={item.title}
-//                       className="object-fit-cover"
-//                     />
-//                     <div className="position-absolute top-0 end-0 p-3">
-//                       <button
-//                         className="btn btn-white rounded-circle shadow-sm d-flex align-items-center justify-content-center"
-//                         style={{
-//                           width: "40px",
-//                           height: "40px",
-//                           backgroundColor: "white",
-//                           border: "none",
-//                         }}
-//                         onClick={(e) => handleBookmark(e, item)}>
-//                         <Heart
-//                           size={22}
-//                           color="#ff4d4d"
-//                           fill={isFavorited ? "#ff4d4d" : "none"}
-//                         />
-//                       </button>
-//                     </div>
-//                   </div>
-//                   <div className="card-body">
-//                     <h5 className="fw-bold text-navy">{item.title}</h5>
-//                     <p className="text-muted small">
-//                       <MapPin size={14} /> {item.address}
-//                     </p>
-//                     <div className="fw-bold text-primary">
-//                       ${item.items?.[0]?.price || 0}
-//                     </div>
-//                   </div>
-//                 </div>
-//               </div>
-//             );
-//           })}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default BrowseListings;
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Search, MapPin, Heart, Navigation, Layers } from "lucide-react";
@@ -335,10 +159,10 @@ const BrowseListings = () => {
     );
 
   return (
-    <div className="min-vh-100 bg-light pt-5">
+    <div className="min-vh-100 bg-light pt-3">
       <div className="container">
         {/* Advanced Filter Box */}
-        <div className="card border-0 shadow-sm p-4 mb-5 rounded-4">
+        <div className="card border-0 shadow-sm p-3 mb-4 rounded-4">
           <div className="row g-3 align-items-end">
             <div className="col-lg-4 col-md-6">
               <label className="form-label small fw-800 text-navy text-uppercase ls-1">
@@ -366,7 +190,8 @@ const BrowseListings = () => {
                 value={filter.category}
                 onChange={(e) =>
                   setFilter({ ...filter, category: e.target.value })
-                }>
+                }
+              >
                 <option>All</option>
                 {[...new Set(listings.map((l) => l.categoryId?.name))]
                   .filter(Boolean)
@@ -412,7 +237,8 @@ const BrowseListings = () => {
                   setAppliedSearch(searchQuery);
                   setAppliedFilter(filter);
                 }}
-                style={{ height: "45px" }}>
+                style={{ height: "45px" }}
+              >
                 <Search size={20} />
               </button>
             </div>
@@ -426,7 +252,7 @@ const BrowseListings = () => {
           </h4>
         </div>
 
-        <div className="row g-4">
+        <div className="row g-3">
           {filteredListings.length > 0 ? (
             filteredListings.map((item) => {
               const isFavorited = favorites.some((fav) => {
@@ -436,13 +262,14 @@ const BrowseListings = () => {
               });
 
               return (
-                <div key={item._id} className="col-12 col-md-6 col-lg-4">
+                <div key={item._id} className="col-12 col-sm-6 col-md-4 col-lg-3">
                   <div
                     className="card h-100 border-0 shadow-sm rounded-4 overflow-hidden listing-card bg-white"
                     style={{ cursor: "pointer", transition: "0.3s" }}
-                    onClick={() => navigate(`/browse/${slugify(item.title)}`)}>
+                    onClick={() => navigate(`/browse/${slugify(item.title)}`)}
+                  >
                     {/* Image Area */}
-                    <div className="ratio ratio-4x3 position-relative">
+                    <div className="ratio ratio-16x9 position-relative">
                       <img
                         src={getImgURL(item.images?.[0])}
                         alt={item.title}
@@ -450,21 +277,23 @@ const BrowseListings = () => {
                       />
                       <div
                         className="position-absolute top-0 start-0 w-100 d-flex justify-content-between align-items-start p-3"
-                        style={{ zIndex: 10 }}>
-                        <span className="badge bg-white text-navy shadow-sm fw-800 px-3 py-2 rounded-3">
-                          ₹{item.items?.[0]?.price?.toLocaleString() || 0}
+                        style={{ zIndex: 10 }}
+                      >
+                        <span className="badge bg-white text-navy shadow-sm fw-800 px-2 py-1 rounded-3">
+                          ${item.items?.[0]?.price?.toLocaleString() || 0}
                         </span>
                         <button
                           className="btn btn-white rounded-circle shadow-sm d-flex align-items-center justify-content-center"
                           style={{
-                            width: "38px",
-                            height: "38px",
+                            width: "32px",
+                            height: "32px",
                             backgroundColor: "white",
                             border: "none",
                           }}
-                          onClick={(e) => handleBookmark(e, item)}>
+                          onClick={(e) => handleBookmark(e, item)}
+                        >
                           <Heart
-                            size={20}
+                            size={16}
                             color="#ff4d4d"
                             fill={isFavorited ? "#ff4d4d" : "none"}
                           />
@@ -473,18 +302,20 @@ const BrowseListings = () => {
                     </div>
 
                     {/* Content Area */}
-                    <div className="card-body p-4 d-flex flex-column">
+                    <div className="card-body p-3 d-flex flex-column">
                       <div className="d-flex justify-content-between align-items-start mb-2">
                         <div className="d-flex flex-column">
                           <small
                             className="text-tan fw-800 text-uppercase ls-1"
-                            style={{ fontSize: "10px" }}>
+                            style={{ fontSize: "10px" }}
+                          >
                             {item.categoryId?.name}
                           </small>
                           {item.subCategoryId?.subcategoryName && (
                             <small
                               className="text-navy fw-bold"
-                              style={{ fontSize: "11px" }}>
+                              style={{ fontSize: "11px" }}
+                            >
                               <Layers size={10} className="me-1" />
                               {item.subCategoryId.subcategoryName}
                             </small>
@@ -505,20 +336,21 @@ const BrowseListings = () => {
                       <h5 className="fw-800 text-navy mb-2 text-truncate ls-1">
                         {item.title}
                       </h5>
-                      <p className="text-muted small mb-4">
+                      <p className="text-muted small mb-3">
                         <MapPin size={14} className="text-danger me-1" />
                         {item.address}
                       </p>
 
                       <div className="mt-auto d-flex justify-content-end">
                         <button
-                          className="btn btn-light rounded-3 px-3 py-2 border shadow-sm"
+                          className="btn btn-light rounded-3 px-2 py-1 border shadow-sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             window.open(
                               `https://www.google.com/maps/search/${encodeURIComponent(item.address)}`,
                             );
-                          }}>
+                          }}
+                        >
                           <Navigation size={18} className="text-navy" />
                         </button>
                       </div>

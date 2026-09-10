@@ -39,7 +39,12 @@ export const getUserId = () => {
 
 // ❌ Clear all
 export const clearStorage = () => {
-  localStorage.clear();
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  localStorage.removeItem("expiry");
+  localStorage.removeItem("sessionExpiry");
+
+
 };
 
 // 🔐 Set session
